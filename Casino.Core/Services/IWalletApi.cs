@@ -15,6 +15,6 @@ namespace Casino.Core.Services
         Task<ApiResponse<WalletOperationResult>> WithdrawAsync([Body] WithdrawRequest request);
 
         [Post("/api/wallets/settle")]
-        Task<ApiResponse<WalletOperationResult>> SettleBetAsync([Body] SettleBetRequest request);
+        Task<ApiResponse<BetOperationResult>> SettleBetAsync([Body] SettleBetRequest request);
     }
 }
