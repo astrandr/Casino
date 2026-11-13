@@ -23,7 +23,7 @@ namespace Casino.Wallet.Services
             return await walletRepository.GetBalanceAsync();
         }
 
-        public async Task<WalletOperationResult> SettleBetAsync(string requestId, decimal betAmount, decimal payout)
+        public async Task<BetOperationResult> SettleBetAsync(string requestId, decimal betAmount, decimal payout)
         {
             return await walletRepository.SettleBetAsync(requestId, betAmount, payout);
         }

@@ -10,6 +10,6 @@ namespace Casino.Wallet.Repository
 
         Task<WalletOperationResult> WithdrawAsync(string requestId, decimal amount);
 
-        Task<WalletOperationResult> SettleBetAsync(string requestId, decimal betAmount, decimal payout);
+        Task<BetOperationResult> SettleBetAsync(string requestId, decimal betAmount, decimal payout);
     }
 }

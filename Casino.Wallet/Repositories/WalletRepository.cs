@@ -14,7 +14,7 @@ namespace Casino.Wallet.Repository
             throw new NotImplementedException();
         }
 
-        public Task<WalletOperationResult> SettleBetAsync(string requestId, decimal betAmount, decimal payout)
+        public Task<BetOperationResult> SettleBetAsync(string requestId, decimal betAmount, decimal payout)
         {
             throw new NotImplementedException();
         }
