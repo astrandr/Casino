@@ -28,7 +28,7 @@ namespace Casino.UI
                 return InvalidAmountMessage;
             }
 
-            if (amount < 0) return "Invalid amount, it should be > 0";
+            if (amount <= 0) return "Invalid amount, it should be > 0";
 
             string resultMessage = "";
 

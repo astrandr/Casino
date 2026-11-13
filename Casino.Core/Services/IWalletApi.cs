@@ -5,7 +5,7 @@ namespace Casino.Core.Services
 {
     internal interface IWalletApi
     {
-        [Get("/api/wallets/ballance")]
+        [Get("/api/wallets/balance")]
         Task<ApiResponse<decimal>> GetBalanceAsync();
 
         [Post("/api/wallets/deposit")]

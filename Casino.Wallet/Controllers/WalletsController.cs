@@ -36,5 +36,12 @@ namespace Casino.Wallet.Controllers
         {
             return await walletService.WithdrawAsync(request.RequestId, request.Amount);
         }
+
+        [HttpPost]
+        [Route("settle")]
+        public async Task<BetOperationResult> SettleBetAsync([FromBody] SettleBetRequest request)
+        {
+            return await walletService.SettleBetAsync(request.RequestId, request.BetAmount, request.PayoutAmount);
+        }
     }
 }
