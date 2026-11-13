@@ -1,4 +1,5 @@
 
+using Casino.Wallet.Repository;
 using Casino.Wallet.Services;
 
 namespace Casino.Wallet
@@ -16,6 +17,7 @@ namespace Casino.Wallet
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
             builder.Services.AddScoped<IWalletService, WalletService>();
+            builder.Services.AddScoped<IWalletRepository, WalletRepository>();
 
             var app = builder.Build();
 

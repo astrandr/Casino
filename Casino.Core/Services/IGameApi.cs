@@ -5,7 +5,7 @@ namespace Casino.Core.Services
 {
     internal interface IGameApi
     {
-        [Post("/api/game/bet")]
+        [Get("/api/game/bet")]
         Task<ApiResponse<decimal>> BetAsync();
 
     }

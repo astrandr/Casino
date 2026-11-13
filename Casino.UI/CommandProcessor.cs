@@ -28,7 +28,7 @@ namespace Casino.UI
                 return InvalidAmountMessage;
             }
 
-            if (amount < 1 || amount > 10) return "Invalid amount, it should be between $1 and $10";
+            if (amount < 0) return "Invalid amount, it should be > 0";
 
             string resultMessage = "";
 
@@ -65,6 +65,8 @@ namespace Casino.UI
                     }
                 case CommandType.BET:
                     {
+                        if (amount < 1 || amount > 10) return "Invalid bet amount, it should be between $1 and $10";
+
                         var result = await casinoService.BetAsync(amount);
                         if (result.betOutcome > 0)
                         {
