@@ -53,6 +53,7 @@ namespace Casino.UI
                 case CommandType.WITHDRAW:
                     {
                         var result = await casinoService.WithdrawAsync(amount);
+
                         if (result.Error != null && result.Error == Contracts.Wallet.WalletError.InsufficientFunds)
                         {
                             resultMessage = "Insufficient funds.";
@@ -68,9 +69,15 @@ namespace Casino.UI
                         if (amount < 1 || amount > 10) return "Invalid bet amount, it should be between $1 and $10";
 
                         var result = await casinoService.BetAsync(amount);
+
+                        if (result.Error != null && result.Error == Contracts.Wallet.WalletError.InsufficientFunds)
+                        {
+                            resultMessage = "Insufficient funds.";
+                        }
+                        else
                         if (result.betOutcome > 0)
                         {
-                            resultMessage = $"Congrats - you won ${result.betOutcome}! Your current balance is : ${result.Balance}";
+                            resultMessage = $"Congrats - you won ${result.betOutcome * amount}! Your current balance is : ${result.Balance}";
                         }
                         else
                         {

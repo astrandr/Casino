@@ -15,7 +15,11 @@ namespace Casino.UI
             {
                 var commandText = Console.ReadLine();
 
-                if (commandText.ToUpper().Contains("EXIT")) break;
+                if (commandText == null) continue;
+
+                commandText = commandText.Trim().ToUpper();
+
+                if (commandText.Contains("EXIT")) break;
 
                 try
                 {
