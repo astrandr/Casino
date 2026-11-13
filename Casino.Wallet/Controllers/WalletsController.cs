@@ -1,8 +1,6 @@
 ﻿using Casino.Contracts.Wallet;
 using Casino.Wallet.Services;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
 
 namespace Casino.Wallet.Controllers
 {

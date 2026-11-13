@@ -1,4 +1,6 @@
 
+using Casino.Wallet.Services;
+
 namespace Casino.Wallet
 {
     public class Program
@@ -13,6 +15,7 @@ namespace Casino.Wallet
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+            builder.Services.AddScoped<IWalletService, WalletService>();
 
             var app = builder.Build();
 

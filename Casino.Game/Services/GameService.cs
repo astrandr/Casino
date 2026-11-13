@@ -5,11 +5,11 @@ namespace Casino.Game.Services
     {
         public decimal Bet()
         {
-            var r = new Random(100).Next(0,100);
+            var r = Random.Shared.Next(100);
 
-            if (r <= 50) return 0;
-            else if (r <= 90) return 2;
-            else return new Random(100).Next(3,10);
+            if (r < 50) return 0m;
+            if (r < 90) return Random.Shared.Next(1, 200) / 100m;
+            return Random.Shared.Next(201, 1000) / 100m;
 
         }
     }

@@ -28,6 +28,8 @@ namespace Casino.UI
                 return InvalidAmountMessage;
             }
 
+            if (amount < 1 || amount > 10) return "Invalid amount, it should be between $1 and $10";
+
             string resultMessage = "";
 
             switch (commandType)
@@ -35,13 +37,30 @@ namespace Casino.UI
                 case CommandType.DEPOSIT:
                     {
                         var result = await casinoService.DepositAsync(amount);
-                        resultMessage = $"Your deposit of ${amount} was successful. Your current balance is : ${result.Balance}";
+
+                        if (result.Error != null && result.Error == Contracts.Wallet.WalletError.InsufficientFunds)
+                        {
+                            resultMessage = "Insufficient funds.";
+                        }
+                        else
+                        {
+                            resultMessage = $"Your deposit of ${amount} was successful. Your current balance is : ${result.Balance}";
+                        }
+
                         break;
                     }
+
                 case CommandType.WITHDRAW:
                     {
                         var result = await casinoService.WithdrawAsync(amount);
-                        resultMessage = $"Your withdrawal of ${amount} was successful. Your current balance is : ${result.Balance}";
+                        if (result.Error != null && result.Error == Contracts.Wallet.WalletError.InsufficientFunds)
+                        {
+                            resultMessage = "Insufficient funds.";
+                        }
+                        else
+                        {
+                            resultMessage = $"Your withdrawal of ${amount} was successful. Your current balance is : ${result.Balance}";
+                        }
                         break;
                     }
                 case CommandType.BET:

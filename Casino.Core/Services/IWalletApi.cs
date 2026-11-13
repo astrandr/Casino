@@ -5,16 +5,16 @@ namespace Casino.Core.Services
 {
     internal interface IWalletApi
     {
-        [Get("/api/Ballance")]
+        [Get("/api/wallets/Ballance")]
         Task<ApiResponse<decimal>> GetBalanceAsync();
 
-        [Post("/api/deposit")]
+        [Post("/api/wallets/deposit")]
         Task<ApiResponse<WalletOperationResult>> DepositAsync([Body] DepositRequest request);
 
-        [Post("/api/withdraw")]
+        [Post("/api/wallets/withdraw")]
         Task<ApiResponse<WalletOperationResult>> WithdrawAsync([Body] WithdrawRequest request);
 
-        [Post("/api/settle")]
+        [Post("/api/wallets/settle")]
         Task<ApiResponse<WalletOperationResult>> SettleBetAsync([Body] SettleBetRequest request);
     }
 }

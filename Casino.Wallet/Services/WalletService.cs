@@ -4,11 +4,11 @@ using Casino.Wallet.Repository;
 
 namespace Casino.Wallet.Services
 {
-    public class WalletsService : IWalletService
+    public class WalletService : IWalletService
     {
         private readonly IWalletRepository walletRepository;
  
-        public WalletsService(IWalletRepository walletService)
+        public WalletService(IWalletRepository walletService)
         {
             this.walletRepository = walletService;
         }
