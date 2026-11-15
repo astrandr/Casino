@@ -7,16 +7,11 @@ namespace Casino.Common.Utilities
     {
         public static async Task<T> SendRequestAsync<T>(Func<Task<ApiResponse<T>>> send)
         {
-            var response = await send();
+            using var response = await send();
 
-            bool isRetryable = response.StatusCode is
-                                    HttpStatusCode.BadGateway or
-                                    HttpStatusCode.ServiceUnavailable or
-                                    HttpStatusCode.GatewayTimeout;
+            await response.EnsureSuccessfulAsync();
 
-            //await response.EnsureSuccessfulAsync();
-
-            return response.Content ?? throw new InvalidOperationException($"Target service is not responding. Error: {response.StatusCode}");
+            return response.Content ?? throw new InvalidOperationException($"The target service returned no result. Error: {response.StatusCode}");
         }
     }
 }

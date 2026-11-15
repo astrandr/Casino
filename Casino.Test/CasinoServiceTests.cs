@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
+using Refit;
 
 namespace Casino.Test
 {
@@ -48,19 +49,21 @@ namespace Casino.Test
             AssertRequest(server, "/api/wallet/withdraw", withdrawalAmount);
         }
 
-        [TestCase("deposit", "Deposit:Wallet:")]
-        [TestCase("withdraw", "Withdraw:Wallet:")]
-        public async Task WalletOperationAsync_WhenWalletReturnsFailure_ThrowsWrappedException(
+        [TestCase("deposit", "/api/wallet/deposit")]
+        [TestCase("withdraw", "/api/wallet/withdraw")]
+        public async Task WalletOperationAsync_WhenWalletReturnsFailure_ThrowsApiException(
             string operation,
-            string expectedMessagePrefix)
+            string expectedPath)
         {
             using var server = new StubWalletServer("wallet unavailable", HttpStatusCode.InternalServerError);
             var service = CreateService(server);
 
-            var exception = Assert.ThrowsAsync<Exception>(async () => await CallOperationAsync(service, operation, 1m));
+            var exception = Assert.ThrowsAsync<ApiException>(async () => await CallOperationAsync(service, operation, 1m));
             await server.RequestHandled;
 
-            Assert.That(exception!.Message, Does.StartWith(expectedMessagePrefix));
+            Assert.That(exception!.StatusCode, Is.EqualTo(HttpStatusCode.InternalServerError));
+            Assert.That(server.RequestUri?.AbsolutePath, Is.EqualTo(expectedPath));
+            Assert.That(server.RequestMethod, Is.EqualTo("POST"));
         }
 
         [TestCase("deposit", "Deposit:Wallet:")]
