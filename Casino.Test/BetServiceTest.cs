@@ -6,6 +6,7 @@ using System.Text.Json;
 using Casino.Contracts.Game;
 using Casino.Game.Services;
 using Casino.Common;
+using Refit;
 
 namespace Casino.Test
 {
@@ -56,6 +57,22 @@ namespace Casino.Test
             Assert.That(gameService.BetCallCount, Is.Zero);
             Assert.That(walletServer.Requests, Has.Count.EqualTo(1));
             AssertBalanceRequest(walletServer.Requests[0]);
+        }
+
+        [Test]
+        public async Task PlaceBetAsync_WhenBalanceRequestFails_PropagatesHttpErrorWithoutPlaying()
+        {
+            using var walletServer = new StubWalletServer(HttpStatusCode.InternalServerError, "wallet unavailable");
+            var gameService = new StubGameService(2m);
+            var service = CreateBetService(walletServer, gameService);
+
+            var exception = Assert.ThrowsAsync<ApiException>(async () => await service.PlaceBetAsync(10m));
+            await walletServer.RequestsHandled;
+
+            Assert.That(exception!.StatusCode, Is.EqualTo(HttpStatusCode.InternalServerError));
+            Assert.That(walletServer.Requests, Has.Count.EqualTo(1));
+            AssertBalanceRequest(walletServer.Requests[0]);
+            Assert.That(gameService.BetCallCount, Is.Zero);
         }
 
         [Test]
@@ -144,10 +161,17 @@ namespace Casino.Test
         {
             private readonly HttpListener listener = new();
             private readonly string[] responseBodies;
+            private readonly HttpStatusCode statusCode;
 
             public StubWalletServer(params string[] responseBodies)
+                : this(HttpStatusCode.OK, responseBodies)
+            {
+            }
+
+            public StubWalletServer(HttpStatusCode statusCode, params string[] responseBodies)
             {
                 this.responseBodies = responseBodies;
+                this.statusCode = statusCode;
 
                 using var portListener = new TcpListener(IPAddress.Loopback, 0);
                 portListener.Start();
@@ -181,7 +205,7 @@ namespace Casino.Test
                         requestBody));
 
                     var responseBytes = Encoding.UTF8.GetBytes(responseBody);
-                    context.Response.StatusCode = (int)HttpStatusCode.OK;
+                    context.Response.StatusCode = (int)statusCode;
                     context.Response.ContentType = "application/json";
                     context.Response.ContentLength64 = responseBytes.Length;
                     await context.Response.OutputStream.WriteAsync(responseBytes);
