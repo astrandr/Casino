@@ -4,6 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>b399bc40-56a3-447c-a37a-ca0c1c60a1f6</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -11,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Casino.Contracts\Casino.Contracts.csproj" />
+    <ProjectReference Include="..\Casino.Contracts\Casino.Common.csproj" />
   </ItemGroup>
 
 </Project>

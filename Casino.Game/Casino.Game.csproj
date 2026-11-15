@@ -4,10 +4,17 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>30717325-679b-4e17-928b-5fb1b8211847</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Refit" Version="16.4.0" />
+    <PackageReference Include="Refit.HttpClientFactory" Version="16.4.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Casino.Contracts\Casino.Common.csproj" />
   </ItemGroup>
 
 </Project>

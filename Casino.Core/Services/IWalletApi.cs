@@ -1,20 +1,21 @@
-﻿using Casino.Contracts.Wallet;
+﻿using Casino.Contracts.Game;
+using Casino.Contracts.Wallet;
 using Refit;
 
 namespace Casino.Core.Services
 {
     internal interface IWalletApi
     {
-        [Get("/api/wallets/balance")]
+        [Get("/api/wallet/balance")]
         Task<ApiResponse<decimal>> GetBalanceAsync();
 
-        [Post("/api/wallets/deposit")]
+        [Post("/api/wallet/deposit")]
         Task<ApiResponse<WalletOperationResult>> DepositAsync([Body] DepositRequest request);
 
-        [Post("/api/wallets/withdraw")]
+        [Post("/api/wallet/withdraw")]
         Task<ApiResponse<WalletOperationResult>> WithdrawAsync([Body] WithdrawRequest request);
 
-        [Post("/api/wallets/settle")]
+        [Post("/api/wallet/settlebet")]
         Task<ApiResponse<BetOperationResult>> SettleBetAsync([Body] SettleBetRequest request);
     }
 }

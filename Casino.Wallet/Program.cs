@@ -17,7 +17,7 @@ namespace Casino.Wallet
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
             builder.Services.AddScoped<IWalletService, WalletService>();
-            builder.Services.AddScoped<IWalletRepository, WalletRepository>();
+            builder.Services.AddSingleton<IWalletRepository, WalletRepository>();
 
             var app = builder.Build();
 

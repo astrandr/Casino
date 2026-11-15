@@ -1,3 +1,5 @@
+using Casino.Common;
+using Casino.Contracts.Wallet;
 using global::Casino.Core.Services;
 using System.Net;
 using System.Net.Sockets;
@@ -8,179 +10,107 @@ namespace Casino.Test
 {
     public class CasinoServiceTests
     {
-        [Test]
-        public async Task DepositAsync_SendsAmountAndReturnsWalletResult()
+        [TestCase("deposit", "/api/wallet/deposit")]
+        [TestCase("withdraw", "/api/wallet/withdraw")]
+        public async Task WalletOperationAsync_SendsAmountAndReturnsResult(string operation, string expectedPath)
         {
-            using var server = new StubWalletServer("{\"balance\":125.50,\"requestId\":\"00000000-0000-0000-0000-000000000001\",\"error\":null}");
-
-            var service = CreateWalletService(server);
-
-            var result = await service.DepositAsync(25.50m);
-            await server.RequestHandled;
-
-            Assert.That(result.Balance, Is.EqualTo(125.50m));
-            Assert.That(result.requestId, Is.EqualTo(Guid.Parse("00000000-0000-0000-0000-000000000001")));
-            AssertRequest(server, "api/deposit", "amount", 25.50m);
-        }
-
-        [Test]
-        public async Task WithdrawAsync_SendsAmountAndReturnsWalletResult()
-        {
-            using var server = new StubWalletServer("{\"balance\":74.50,\"requestId\":\"00000000-0000-0000-0000-000000000001\",\"error\":null}");
-            var service = CreateWalletService(server);
-
-            var result = await service.WithdrawAsync(25.50m);
-            await server.RequestHandled;
-
-            Assert.That(result.Balance, Is.EqualTo(74.50m));
-            Assert.That(result.requestId, Is.EqualTo(Guid.Parse("00000000-0000-0000-0000-000000000001")));
-            AssertRequest(server, "api/withdraw", "amount", 25.50m);
-        }
-
-        [TestCase(10, 0, TestName = "BetAsync_LosesBet_ReturnsZero")]
-        [TestCase(10, 20, TestName = "BetAsync_WinsTwoTimesBet_ReturnsTwoTimesBet")]
-        [TestCase(10, 50, TestName = "BetAsync_WinsBetweenTwoAndTenTimesBet_ReturnsPayout")]
-        [TestCase(10, 100, TestName = "BetAsync_WinsTenTimesBet_ReturnsTenTimesBet")]
-        public async Task BetAsync_SendsAmountAndReturnsBetOutcome(decimal amount, decimal expectedBetOutcome)
-        {
-            const decimal oldBalance = 100m;
-            var expectedBalance = oldBalance - amount + expectedBetOutcome;
-            var responseBody = JsonSerializer.Serialize(new
+            const decimal amount = 25.50m;
+            const decimal expectedBalance = 125.75m;
+            using var server = new StubWalletServer(JsonSerializer.Serialize(new
             {
                 balance = expectedBalance,
-                betOutcome = expectedBetOutcome,
-                requestId = "00000000-0000-0000-0000-000000000001",
                 error = (string?)null
-            });
-            using var server = new StubGameServer(responseBody);
-            var service = CreateGameService(server);
+            }));
+            var service = CreateService(server);
 
-            var result = await service.BetAsync(amount);
+            var result = await CallOperationAsync(service, operation, amount);
             await server.RequestHandled;
 
             Assert.That(result.Balance, Is.EqualTo(expectedBalance));
-            Assert.That(result.betOutcome, Is.EqualTo(expectedBetOutcome));
-            AssertRequest(server, "api/deposit", "amount", amount);
+            AssertRequest(server, expectedPath, amount);
         }
 
         [Test]
-        public async Task BetAsync_WhenGameServiceBetOperationFails_ThrowsApiException()
+        public async Task WithdrawAsync_WhenAmountExceedsBalance_ReturnsInsufficientFunds()
         {
-            using var server = new StubGameServer("game service unavailable", HttpStatusCode.InternalServerError);
+            const decimal currentBalance = 20m;
+            const decimal withdrawalAmount = 25m;
+            var responseBody = JsonSerializer.Serialize(
+                new WalletOperationResult(currentBalance, OperationError.InsufficientFunds));
+            using var server = new StubWalletServer(responseBody);
+            var service = CreateService(server);
 
-            var service = CreateGameService(server);
-
-            Assert.ThrowsAsync<Refit.ApiException>(async () => await service.BetAsync(10m));
-
+            var result = await service.WithdrawAsync(withdrawalAmount);
             await server.RequestHandled;
 
-            AssertRequest(server, "api/deposit", "amount", 10m);
+            Assert.That(result.Balance, Is.EqualTo(currentBalance));
+            Assert.That(result.Error, Is.EqualTo(OperationError.InsufficientFunds));
+            AssertRequest(server, "/api/wallet/withdraw", withdrawalAmount);
         }
 
-        [TestCase(true)]
-        [TestCase(false)]
-        public async Task OperationAsync_GeneratesRequestId(bool deposit)
-        {
-            using var server = new StubWalletServer("{\"balance\":10,\"requestId\":\"00000000-0000-0000-0000-000000000001\",\"error\":null}");
-            var service = CreateWalletService(server);
-
-            if (deposit)
-            {
-                await service.DepositAsync(1m);
-            }
-            else
-            {
-                await service.WithdrawAsync(1m);
-            }
-
-            await server.RequestHandled;
-            using var requestJson = JsonDocument.Parse(server.RequestBody!);
-            Assert.That(Guid.TryParse(GetPropertyIgnoringCase(requestJson.RootElement, "requestId").GetString(), out _), Is.True);
-        }
-
-        [TestCase(true)]
-        [TestCase(false)]
-        public async Task OperationAsync_WhenWalletReturnsFailure_ThrowsApiException(bool deposit)
+        [TestCase("deposit", "Deposit:Wallet:")]
+        [TestCase("withdraw", "Withdraw:Wallet:")]
+        public async Task WalletOperationAsync_WhenWalletReturnsFailure_ThrowsWrappedException(
+            string operation,
+            string expectedMessagePrefix)
         {
             using var server = new StubWalletServer("wallet unavailable", HttpStatusCode.InternalServerError);
-            var service = CreateWalletService(server);
+            var service = CreateService(server);
 
-            Assert.ThrowsAsync<Refit.ApiException>(async () =>
-            {
-                if (deposit)
-                {
-                    await service.DepositAsync(1m);
-                }
-                else
-                {
-                    await service.WithdrawAsync(1m);
-                }
-            });
+            var exception = Assert.ThrowsAsync<Exception>(async () => await CallOperationAsync(service, operation, 1m));
             await server.RequestHandled;
+
+            Assert.That(exception!.Message, Does.StartWith(expectedMessagePrefix));
         }
 
-        [TestCase(true)]
-        [TestCase(false)]
-        public async Task OperationAsync_WhenWalletReturnsNoResult_ThrowsInvalidOperationException(bool deposit)
+        [TestCase("deposit", "Deposit:Wallet:")]
+        [TestCase("withdraw", "Withdraw:Wallet:")]
+        public async Task WalletOperationAsync_WhenWalletReturnsNoResult_ThrowsWrappedException(
+            string operation,
+            string expectedMessagePrefix)
         {
             using var server = new StubWalletServer(string.Empty, HttpStatusCode.NoContent);
-            var service = CreateWalletService(server);
+            var service = CreateService(server);
 
-            Assert.ThrowsAsync<InvalidOperationException>(async () =>
-            {
-                if (deposit)
-                {
-                    await service.DepositAsync(1m);
-                }
-                else
-                {
-                    await service.WithdrawAsync(1m);
-                }
-            });
+            var exception = Assert.ThrowsAsync<Exception>(async () => await CallOperationAsync(service, operation, 1m));
             await server.RequestHandled;
+
+            Assert.That(exception!.Message, Does.StartWith(expectedMessagePrefix));
         }
 
-        private static CasinoService CreateWalletService(StubWalletServer server)
+        private static CasinoService CreateService(StubWalletServer server)
         {
             return new CasinoService(server.BaseUrl, "http://game.invalid/");
         }
 
-        private static CasinoService CreateGameService(StubGameServer server)
+        private static Task<WalletOperationResult> CallOperationAsync(CasinoService service, string operation, decimal amount)
         {
-            return new CasinoService("http://wallet.invalid/", server.BaseUrl);
+            return operation switch
+            {
+                "deposit" => service.DepositAsync(amount),
+                "withdraw" => service.WithdrawAsync(amount),
+                _ => throw new ArgumentOutOfRangeException(nameof(operation), operation, "Unsupported wallet operation.")
+            };
         }
 
-        private static void AssertRequest(StubApiServer server, string expectedPath, string expectedProperty, decimal expectedAmount)
+        private static void AssertRequest(StubWalletServer server, string expectedPath, decimal expectedAmount)
         {
-            Assert.That(server.RequestUri?.AbsolutePath, Is.EqualTo("/" + expectedPath));
+            Assert.That(server.RequestUri?.AbsolutePath, Is.EqualTo(expectedPath));
             Assert.That(server.RequestMethod, Is.EqualTo("POST"));
 
             using var requestJson = JsonDocument.Parse(server.RequestBody!);
-            Assert.That(GetPropertyIgnoringCase(requestJson.RootElement, expectedProperty).GetDecimal(), Is.EqualTo(expectedAmount));
-            Assert.That(Guid.TryParse(GetPropertyIgnoringCase(requestJson.RootElement, "requestId").GetString(), out _), Is.True);
+            var amountProperty = requestJson.RootElement.EnumerateObject()
+                .First(property => string.Equals(property.Name, "amount", StringComparison.OrdinalIgnoreCase));
+            Assert.That(amountProperty.Value.GetDecimal(), Is.EqualTo(expectedAmount));
         }
 
-        private static JsonElement GetPropertyIgnoringCase(JsonElement element, string propertyName)
-        {
-            foreach (var property in element.EnumerateObject())
-            {
-                if (string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase))
-                {
-                    return property.Value;
-                }
-            }
-
-            Assert.Fail($"Request JSON is missing property '{propertyName}'.");
-            return default;
-        }
-
-        private abstract class StubApiServer : IDisposable
+        private sealed class StubWalletServer : IDisposable
         {
             private readonly HttpListener listener = new();
             private readonly string responseBody;
             private readonly HttpStatusCode statusCode;
 
-            protected StubApiServer(string responseBody, HttpStatusCode statusCode = HttpStatusCode.OK)
+            public StubWalletServer(string responseBody, HttpStatusCode statusCode = HttpStatusCode.OK)
             {
                 this.responseBody = responseBody;
                 this.statusCode = statusCode;
@@ -224,22 +154,6 @@ namespace Casino.Test
             public void Dispose()
             {
                 listener.Close();
-            }
-        }
-
-        private sealed class StubWalletServer : StubApiServer
-        {
-            public StubWalletServer(string responseBody, HttpStatusCode statusCode = HttpStatusCode.OK)
-                : base(responseBody, statusCode)
-            {
-            }
-        }
-
-        private sealed class StubGameServer : StubApiServer
-        {
-            public StubGameServer(string responseBody, HttpStatusCode statusCode = HttpStatusCode.OK)
-                : base(responseBody, statusCode)
-            {
             }
         }
     }

@@ -17,6 +17,7 @@ namespace Casino.Game
             builder.Services.AddSwaggerGen();
 
             builder.Services.AddScoped<IGameService, GameService>();
+            builder.Services.AddScoped<IBetService, BetService>();
 
             var app = builder.Build();
 

@@ -1,4 +1,5 @@
-﻿using Casino.Contracts.Wallet;
+﻿using Casino.Contracts.Game;
+using Casino.Contracts.Wallet;
 
 namespace Casino.Wallet.Repository
 {
@@ -6,10 +7,10 @@ namespace Casino.Wallet.Repository
     {
         Task<decimal> GetBalanceAsync();
 
-        Task<WalletOperationResult> DepositAsync(string requestId, decimal amount);
+        Task<WalletOperationResult> DepositAsync(decimal amount);
 
-        Task<WalletOperationResult> WithdrawAsync(string requestId, decimal amount);
+        Task<WalletOperationResult> WithdrawAsync(decimal amount);
 
-        Task<BetOperationResult> SettleBetAsync(string requestId, decimal betAmount, decimal payout);
+        Task<BetOperationResult> SettleBetAsync(decimal betAmount, decimal payout);
     }
 }
