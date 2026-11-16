@@ -1,4 +1,5 @@
-﻿using Casino.Game.Services;
+﻿using Casino.Contracts.Game;
+using Casino.Game.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Casino.Game.Controllers
@@ -7,21 +8,21 @@ namespace Casino.Game.Controllers
     [ApiController]
     public class GameController : ControllerBase
     {
-        private readonly IGameService gameService;
+        private readonly IBetService betService;
         private readonly ILogger<GameController> logger;
 
-        public GameController(IGameService gameService, ILogger<GameController> logger)
+        public GameController(IBetService betService, ILogger<GameController> logger)
         {
-            this.gameService = gameService;
+            this.betService = betService;
             this.logger = logger;
         }
 
-        [HttpGet]
+        [HttpPost]
         [Route("bet")]
-        public decimal Bet()
+        public async Task<BetOperationResult> BetAsync([FromBody] BetRequest request)
         {
             logger.LogInformation("Bet called.");
-            return gameService.Bet();
+            return await betService.PlaceBetAsync(request.BetAmount);
         }
     }
 }

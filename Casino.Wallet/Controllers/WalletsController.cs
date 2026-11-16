@@ -1,18 +1,26 @@
-﻿using Casino.Contracts.Wallet;
+﻿using Casino.Contracts.Game;
+using Casino.Contracts.Wallet;
 using Casino.Wallet.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Casino.Wallet.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class WalletsController : ControllerBase
+    public class WalletController : ControllerBase
     {
         private readonly IWalletService walletService;
+        private readonly ILogger<WalletController> logger;
+        private readonly string settlementApiKey;
 
-        public WalletsController(IWalletService walletService)
+        public WalletController(IWalletService walletService, IConfiguration configuration, ILogger<WalletController> logger)
         {
             this.walletService = walletService;
+            this.logger = logger;
+            settlementApiKey = configuration["SettlementApiKey"] ?? throw new InvalidOperationException("SettlementApiKey is missing.");
         }
 
         [HttpGet]
@@ -26,7 +34,7 @@ namespace Casino.Wallet.Controllers
         [Route("deposit")]
         public async Task<WalletOperationResult> DepositAsync([FromBody] DepositRequest request)
         {
-            return await walletService.DepositAsync(request.RequestId, request.Amount);
+            return await walletService.DepositAsync(request.Amount);
         }
 
 
@@ -34,14 +42,29 @@ namespace Casino.Wallet.Controllers
         [Route("withdraw")]
         public async Task<WalletOperationResult> WithdrawAsync([FromBody] WithdrawRequest request)
         {
-            return await walletService.WithdrawAsync(request.RequestId, request.Amount);
+            return await walletService.WithdrawAsync(request.Amount);
         }
 
         [HttpPost]
-        [Route("settle")]
-        public async Task<BetOperationResult> SettleBetAsync([FromBody] SettleBetRequest request)
+        [Route("settlebet")]
+        public async Task<ActionResult<BetOperationResult>> SettleBetAsync([FromBody] SettleBetRequest request, [FromHeader(Name = "X-Settlement-Key")] string? apiKey)
         {
-            return await walletService.SettleBetAsync(request.RequestId, request.BetAmount, request.PayoutAmount);
+            if (string.IsNullOrWhiteSpace(settlementApiKey) ||  apiKey is null 
+                ||!CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(apiKey), Encoding.UTF8.GetBytes(settlementApiKey)))
+            {
+                logger.LogWarning("Unauthorized call.");
+                return Unauthorized();
+            }
+
+            try
+            {
+                return await walletService.SettleBetAsync(request.BetAmount, request.PayoutAmount);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Wallet settlement failed.");
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
         }
     }
 }

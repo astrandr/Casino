@@ -1,4 +1,5 @@
-﻿using Casino.Contracts.Wallet;
+﻿using Casino.Contracts.Game;
+using Casino.Contracts.Wallet;
 
 namespace Casino.Core.Services
 {

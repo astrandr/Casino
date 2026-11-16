@@ -11,9 +11,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Casino.Game", "Casino.Game\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Casino.Wallet", "Casino.Wallet\Casino.Wallet.csproj", "{55616E33-7B30-478C-B06C-8B91B706821F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Casino.Contracts", "Casino.Contracts\Casino.Contracts.csproj", "{84028CA6-F260-4C4D-9838-19240AD096C3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Casino.Common", "Casino.Contracts\Casino.Common.csproj", "{84028CA6-F260-4C4D-9838-19240AD096C3}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Casino.Test", "Casino.Test\Casino.Test.csproj", "{352FF360-4A7B-4AA0-BA92-DCD4E0CFD5E0}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

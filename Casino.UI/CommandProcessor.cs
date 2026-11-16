@@ -1,4 +1,6 @@
-﻿using Casino.Core.Services;
+﻿using Casino.Common;
+using Casino.Core.Services;
+using System.Globalization;
 
 namespace Casino.UI
 {
@@ -6,27 +8,28 @@ namespace Casino.UI
     {
         private readonly ICasinoService casinoService;
 
-        private const string InvalidAmountMessage = "Invalid amount.";
-        private const string UnknownCommandMessage = "Unknown command";
-
         public CommandProcessor(ICasinoService casinoService)
         {
             this.casinoService = casinoService;
         }
 
-        public async Task<string> ProcessUserCommand(string commandText)
+        public async Task<string> ProcessUserCommand(CommandType commandType, decimal amount)
         {
-            var tokens = commandText.Split(" ", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.RemoveEmptyEntries);
-
-            if (!Enum.TryParse<CommandType>(tokens[0], out CommandType commandType))
+            string ParseOperationError(OperationError error, decimal balance)
             {
-                return UnknownCommandMessage;
+                if (error == OperationError.InsufficientFunds)
+                {
+                    return $"Insufficient funds. Your current balance is : ${balance.ToString("0.00", CultureInfo.InvariantCulture)}";
+                }
+                else
+                if (error == OperationError.InvalidAmount)
+                {
+                    return "Invalid amount";
+                }
+                else return "Unknown error";
             }
 
-            if (tokens.Length < 2 || !decimal.TryParse(tokens[1], out decimal amount))
-            {
-                return InvalidAmountMessage;
-            }
+            string FormatMoney(decimal amount) =>   amount.ToString("0.00", CultureInfo.InvariantCulture);
 
             if (amount <= 0) return "Invalid amount, it should be > 0";
 
@@ -38,13 +41,13 @@ namespace Casino.UI
                     {
                         var result = await casinoService.DepositAsync(amount);
 
-                        if (result.Error != null && result.Error == Contracts.Wallet.WalletError.InsufficientFunds)
+                        if (result.Error != null)
                         {
-                            resultMessage = "Insufficient funds.";
+                            resultMessage = ParseOperationError(result.Error.Value, result.Balance);
                         }
                         else
                         {
-                            resultMessage = $"Your deposit of ${amount} was successful. Your current balance is : ${result.Balance}";
+                            resultMessage = $"Your deposit of ${FormatMoney(amount)} was successful. Your current balance is : ${FormatMoney(result.Balance)}";
                         }
 
                         break;
@@ -54,13 +57,13 @@ namespace Casino.UI
                     {
                         var result = await casinoService.WithdrawAsync(amount);
 
-                        if (result.Error != null && result.Error == Contracts.Wallet.WalletError.InsufficientFunds)
+                        if (result.Error != null)
                         {
-                            resultMessage = "Insufficient funds.";
+                            resultMessage = ParseOperationError(result.Error.Value, result.Balance);
                         }
                         else
                         {
-                            resultMessage = $"Your withdrawal of ${amount} was successful. Your current balance is : ${result.Balance}";
+                            resultMessage = $"Your withdrawal of ${FormatMoney(amount)} was successful. Your current balance is : ${FormatMoney(result.Balance)}";
                         }
                         break;
                     }
@@ -70,31 +73,32 @@ namespace Casino.UI
 
                         var result = await casinoService.BetAsync(amount);
 
-                        if (result.Error != null && result.Error == Contracts.Wallet.WalletError.InsufficientFunds)
+                        if (result.Error != null)
                         {
-                            resultMessage = "Insufficient funds.";
+                            resultMessage = ParseOperationError(result.Error.Value, result.Balance);
                         }
                         else
                         if (result.betOutcome > 0)
                         {
-                            resultMessage = $"Congrats - you won ${result.betOutcome * amount}! Your current balance is : ${result.Balance}";
+                            resultMessage = $"Congrats - you won ${FormatMoney(result.betOutcome * amount)}! Your current balance is : ${FormatMoney(result.Balance)}";
                         }
                         else
                         {
-                            resultMessage = $"Sorry, but you didn't win! Your current balance is : ${result.Balance}";
+                            resultMessage = $"Sorry, but you didn't win! Your current balance is : ${FormatMoney(result.Balance)}";
                         }
                         break;
                     }
+                default: resultMessage = "Unknown Command Type"; break;
             }
 
             return resultMessage;
         }
+    }
 
-        internal enum CommandType
-        {
-            DEPOSIT,
-            WITHDRAW,
-            BET
-        }
+    internal enum CommandType
+    {
+        DEPOSIT,
+        WITHDRAW,
+        BET
     }
 }

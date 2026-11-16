@@ -1,4 +1,4 @@
-﻿
+﻿using Casino.Contracts.Game;
 using Casino.Contracts.Wallet;
 using Casino.Wallet.Repository;
 
@@ -13,9 +13,9 @@ namespace Casino.Wallet.Services
             this.walletRepository = walletService;
         }
 
-        public async Task<WalletOperationResult> DepositAsync(string requestId, decimal amount)
+        public async Task<WalletOperationResult> DepositAsync(decimal amount)
         {          
-            return await walletRepository.DepositAsync(requestId, amount);
+            return await walletRepository.DepositAsync(amount);
         }
 
         public async Task<decimal> GetBalanceAsync()
@@ -23,14 +23,14 @@ namespace Casino.Wallet.Services
             return await walletRepository.GetBalanceAsync();
         }
 
-        public async Task<BetOperationResult> SettleBetAsync(string requestId, decimal betAmount, decimal payout)
+        public async Task<BetOperationResult> SettleBetAsync(decimal betAmount, decimal payout)
         {
-            return await walletRepository.SettleBetAsync(requestId, betAmount, payout);
+            return await walletRepository.SettleBetAsync(betAmount, payout);
         }
 
-        public async Task<WalletOperationResult> WithdrawAsync(string requestId, decimal amount)
+        public async Task<WalletOperationResult> WithdrawAsync(decimal amount)
         {
-            return await walletRepository.WithdrawAsync(requestId, amount);
+            return await walletRepository.WithdrawAsync(amount);
         }
     }
 }
